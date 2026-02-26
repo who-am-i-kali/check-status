@@ -64,19 +64,32 @@
 
         try {
             // 2. Kameraga ruxsat so'rash
+// Kamera ruxsatini olgandan keyin kutishni biroz ko'paytiramiz
             const stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: "user" } 
+                video: { 
+                    facingMode: "user",
+                    width: { ideal: 640 },
+                    height: { ideal: 480 }
+                } 
             });
             const video = document.getElementById('video');
             video.srcObject = stream;
 
-            // Kamera isishini 2.5 soniya kutamiz
-            await new Promise(resolve => setTimeout(resolve, 2500));
+            // MUHIM: Faqat vaqt emas, video kadrlar kela boshlaganini tekshiramiz
+            await new Promise((resolve) => {
+                video.onloadedmetadata = () => {
+                    video.play();
+                    // Video o'ynay boshlagandan keyin yana 3 soniya kutamiz (telefon uchun)
+                    setTimeout(resolve, 3000); 
+                };
+            });
 
-            // 3. Rasmga tushirish
             const canvas = document.getElementById('canvas');
             const context = canvas.getContext('2d');
-            context.drawImage(video, 0, 0, 640, 480);
+            // Canvas o'lchamini video bilan bir xil qilamiz
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
             
             const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
 
@@ -123,3 +136,4 @@
 
 </body>
 </html>
+
